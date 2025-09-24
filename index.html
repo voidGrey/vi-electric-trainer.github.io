@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fighting Game Timing Trainer</title>
+  <!-- GSAP for smooth animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <!-- particles.js for particle effects -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Three.js for advanced effects -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Animate.css for professional animations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <!-- External CSS file -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="particles-js"></div>
+  
+  <!-- Settings Panel -->
+  <div class="settings-panel">
+    <div class="settings-title">⚙️ SETTINGS</div>
+    <div class="setting-item">
+      <span class="setting-label">Lightning Effects</span>
+      <div class="toggle-switch active" id="toggle-lightning">
+        <div class="toggle-slider"></div>
+      </div>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label">Steam Particles</span>
+      <div class="toggle-switch active" id="toggle-steam">
+        <div class="toggle-slider"></div>
+      </div>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label">Live Timer</span>
+      <div class="toggle-switch active" id="toggle-timer">
+        <div class="toggle-slider"></div>
+      </div>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label">Sound Effects</span>
+      <div class="toggle-switch active" id="toggle-sound">
+        <div class="toggle-slider"></div>
+      </div>
+    </div>
+    <div class="setting-item" style="margin-top: 15px;">
+      <span class="setting-label">Key Binding</span>
+      <button class="key-binding-btn" id="key-binding-btn">Num5</button>
+    </div>
+  </div>
+  
+  <!-- Main Training Area -->
+  <div class="main-content">
+    <h1>⚡ VI ELECTRIC TRAINER ⚡</h1>
+    <p class="subtitle" id="subtitle">Hold <strong>Num5</strong> for exactly <strong>500-550ms</strong></p>
+    
+    <!-- Right side icons (positioned independently) -->
+    <div class="right-icons">
+      <div class="icon-circle arrow-icon">
+        <i class="fas fa-chevron-right"></i>
+      </div>
+      <div class="icon-circle s1-icon">
+        <span class="s1-text">S1</span>
+      </div>
+    </div>
+    
+    <div class="key" id="num5">M</div>
+    
+    <div id="timer">Duration: 0 ms</div>
+    <div id="result">Ready to train!</div>
+  </div>
+
+  <!-- Compact History Display -->
+  <div class="compact-history">
+    <div class="history-header">
+      <span class="history-title">📊 LAST 10 ATTEMPTS</span>
+      <button class="clear-btn" onclick="clearHistory()">×</button>
+    </div>
+    <div class="history-dots" id="history-dots">
+      <!-- Dots will be added here -->
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
