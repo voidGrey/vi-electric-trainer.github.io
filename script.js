@@ -9,6 +9,11 @@ const timerEl = document.getElementById("timer");
 const historyDots = document.getElementById("history-dots");
 const subtitleEl = document.getElementById("subtitle");
 
+// Stats elements
+const successRateEl = document.getElementById("success-rate");
+const currentStreakEl = document.getElementById("current-streak");
+const bestStreakEl = document.getElementById("best-streak");
+
 // Settings state
 let settings = {
   lightningEffects: true,
@@ -21,6 +26,12 @@ let settings = {
 // History array - keep only last 10 attempts for compact display
 let attemptHistory = [];
 const MAX_HISTORY = 10;
+
+// Stats tracking
+let currentStreak = 0;
+let bestStreak = 0;
+let totalAttempts = 0;
+let successfulAttempts = 0;
 
 // Audio elements for custom sounds - using multiple instances
 let perfectAudioPool = [];
@@ -618,9 +629,44 @@ function updateSubtitle() {
   subtitleEl.innerHTML = `Hold <strong>${keyName}</strong> for exactly <strong>500-550ms</strong>`;
 }
 
+// Timing classification function
+function classifyTiming(duration) {
+  if (duration >= 500 && duration <= 550) {
+    return 'perfect'; // Perfect range
+  } else if (duration >= 480 && duration <= 570) {
+    return 'close'; // Close range - will show as yellow
+  } else {
+    return 'fail'; // Failed attempt
+  }
+}
+
+// Update stats display
+function updateStatsDisplay() {
+  // Calculate success rate
+  const successRate = totalAttempts > 0 ? Math.round((successfulAttempts / totalAttempts) * 100) : 0;
+  successRateEl.textContent = successRate + '%';
+  
+  // Update streak displays
+  currentStreakEl.textContent = currentStreak;
+  bestStreakEl.textContent = bestStreak;
+  
+  // Add glow effect to current streak if active
+  if (currentStreak > 0) {
+    currentStreakEl.classList.add('streak-active');
+  } else {
+    currentStreakEl.classList.remove('streak-active');
+  }
+}
+
 // Compact History management with dots
-function addToHistory(duration, success) {
-  const attempt = { duration, success, timestamp: Date.now() };
+function addToHistory(duration, classification) {
+  const isSuccess = classification === 'perfect';
+  const attempt = { 
+    duration, 
+    classification, // Store classification instead of just success/fail
+    success: isSuccess,
+    timestamp: Date.now() 
+  };
   attemptHistory.push(attempt); // Add to end for left-to-right display (latest on right)
   
   // Keep only last 10 attempts
@@ -628,7 +674,19 @@ function addToHistory(duration, success) {
     attemptHistory.shift(); // Remove oldest (first) element
   }
   
+  // Update global stats
+  totalAttempts++;
+  
+  if (isSuccess) {
+    successfulAttempts++;
+    currentStreak++;
+    bestStreak = Math.max(bestStreak, currentStreak);
+  } else {
+    currentStreak = 0; // Reset streak on any non-perfect attempt
+  }
+  
   updateHistoryDisplay(true);
+  updateStatsDisplay();
 }
 
 function updateHistoryDisplay(isNewItem = false) {
@@ -641,7 +699,15 @@ function updateHistoryDisplay(isNewItem = false) {
     
     if (i < attemptHistory.length) {
       const attempt = attemptHistory[i];
-      dot.classList.add(attempt.success ? "success" : "fail");
+      // Use the classification to determine dot color
+      if (attempt.classification === 'perfect') {
+        dot.classList.add("success");
+      } else if (attempt.classification === 'close') {
+        dot.classList.add("close");
+      } else {
+        dot.classList.add("fail");
+      }
+      
       dot.setAttribute("data-time", `${Math.round(attempt.duration)}ms`);
       
       // Only animate the newest item (last in array) when it's just added
@@ -658,9 +724,17 @@ function updateHistoryDisplay(isNewItem = false) {
 
 function clearHistory() {
   attemptHistory = [];
-  updateHistoryDisplay();
+  // Reset all stats
+  currentStreak = 0;
+  bestStreak = 0;
+  totalAttempts = 0;
+  successfulAttempts = 0;
   
-  // Visual feedback
+  updateHistoryDisplay();
+  updateStatsDisplay();
+  
+  // Visual feedback - use the correct element reference
+  const historyContainer = document.querySelector('.compact-history');
   gsap.to(historyContainer, {
     scale: 0.9,
     yoyo: true,
@@ -704,12 +778,14 @@ document.addEventListener("keyup", (e) => {
     
     timerEl.innerText = `Duration: ${Math.round(duration)} ms`;
 
-    const isSuccess = duration >= 499 && duration <= 551;
-
-    // Add to history
-    addToHistory(duration, isSuccess);
+    // Classify the timing attempt
+    const classification = classifyTiming(duration);
     
-    if (isSuccess) {
+    // Add to history with classification
+    addToHistory(duration, classification);
+    
+    // Handle different result types
+    if (classification === 'perfect') {
       resultEl.innerHTML = `⚡ PERFECT COMBO! ${Math.round(duration)} ms ⚡`;
       resultEl.className = "success-text";
       animateSuccess();
@@ -720,11 +796,36 @@ document.addEventListener("keyup", (e) => {
         gsap.set(keyEl, { rotation: 0 });
         resultEl.className = "";
       }, 2000);
-    } else {
+    } else if (classification === 'close') {
+      // Close attempt - show in yellow/orange
+      const diff = duration < 500 ? "CLOSE - A BIT FAST" : "CLOSE - A BIT SLOW";
+      resultEl.innerHTML = `🔶 ${diff}: ${Math.round(duration)} ms`;
+      resultEl.className = "close-text";
+      
       // Initialize audio if not done
       initializeAudio();
       
-      const diff = duration < 499 ? "TOO FAST" : "TOO SLOW";
+      // Play a softer fail sound for close attempts
+      playFailSound();
+      
+      // Gentle shake for close attempts
+      gsap.to(keyEl, {
+        x: "+=10",
+        yoyo: true,
+        repeat: 1,
+        duration: 0.15,
+        ease: "power2.inOut"
+      });
+      
+      setTimeout(() => {
+        resultEl.className = "";
+      }, 2000);
+    } else {
+      // Failed attempt
+      // Initialize audio if not done
+      initializeAudio();
+      
+      const diff = duration < 480 ? "TOO FAST" : "TOO SLOW";
       resultEl.innerHTML = `✘ ${diff}: ${Math.round(duration)} ms`;
       resultEl.className = "fail-text";
       
@@ -774,4 +875,5 @@ keyEl.addEventListener("contextmenu", (e) => e.preventDefault());
 initializeAudioPool();
 setupSettingsToggles();
 updateHistoryDisplay();
+updateStatsDisplay();
 updateSubtitle();
